@@ -1,0 +1,22 @@
+{
+  "name": "@compforge/agentue",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "sdks/typescript"
+  ],
+  "exports": {
+    "./ui": "./sdks/typescript/src/ui/index.ts"
+  },
+  "scripts": {
+    "test": "bun --cwd sdks/typescript test",
+    "typecheck": "bun --cwd sdks/typescript typecheck",
+    "check": "bun run typecheck && bun test"
+  },
+  "files": [
+    "sdks/typescript/src",
+    "LICENSE",
+    "README.md"
+  ]
+}
