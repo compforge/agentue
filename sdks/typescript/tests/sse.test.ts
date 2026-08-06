@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { decodeSse, encodeSse } from "../src/index.ts";
+import { decodeSse, encodeSse } from "@compforge/agentue/ui";
 
 describe("SSE binding", () => {
   test("encodes a transport cursor", () => {

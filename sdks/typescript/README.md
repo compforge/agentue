@@ -13,7 +13,7 @@ import {
   PROTOCOL_VERSION,
   applyPatches,
   type UIModel,
-} from "@compforge/agentue";
+} from "@compforge/agentue/ui";
 
 const model: UIModel = {
   version: PROTOCOL_VERSION,
@@ -31,5 +31,5 @@ const events = [
 const snapshot = applyPatches({}, events);
 ```
 
-Domain-specific model and block fields remain application-owned. The SDK does not include an agent runtime, UI
-components, or the AgentUE Runner.
+Domain-specific model and block fields remain application-owned. The `ui` subpath is independent from other AgentUE
+capabilities and does not include an agent runtime, UI components, or the AgentUE Runner.

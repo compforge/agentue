@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { applyPatch } from "../src/index.ts";
+import { applyPatch } from "@compforge/agentue/ui";
 
 const emptyModel = () => ({ version: "1.0", biz: "chat", meta: {}, blocks: [] });
 

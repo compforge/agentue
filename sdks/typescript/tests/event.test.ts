@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { extractPatchOp, parsePatchEvent } from "../src/index.ts";
+import { extractPatchOp, parsePatchEvent } from "@compforge/agentue/ui";
 
 describe("patch event validation", () => {
   test("start requires a model", () => {
