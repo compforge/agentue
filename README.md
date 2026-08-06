@@ -33,6 +33,12 @@ Install Runner and its Redis support:
 python -m pip install "agentue[runner]"
 ```
 
+For TypeScript applications, install the dependency-free UI protocol SDK:
+
+```bash
+bun add @compforge/agentue
+```
+
 The bare `agentue` package is a dependency-free namespace. `agentue[ui]` does not install Redis or Runner dependencies.
 
 ## UI event quick start
@@ -59,12 +65,13 @@ spec/              Normative UI event and SSE specifications
 schema/            Language-neutral JSON Schemas
 conformance/       Shared fixtures for SDK implementations
 sdks/python/       agentue.ui and agentue.runner
+sdks/typescript/   TypeScript UI event protocol SDK
 docs/              Runtime design and operating contracts
 ```
 
-TypeScript and Go capabilities can be added under `sdks/` as the kit grows.
+Additional language capabilities can be added under `sdks/` as the kit grows.
 
-See [the UI event specification](spec/protocol.md), [the SSE binding](spec/sse.md), [the Runner design](docs/runner.md), and [the Python SDK](sdks/python/README.md).
+See [the UI event specification](spec/protocol.md), [the SSE binding](spec/sse.md), [the Runner design](docs/runner.md), [the Python SDK](sdks/python/README.md), and [the TypeScript SDK](sdks/typescript/README.md).
 
 ## License
 
