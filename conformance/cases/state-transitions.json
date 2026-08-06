@@ -1,0 +1,122 @@
+{
+  "protocol_version": "1.0",
+  "cases": [
+    {
+      "name": "start_set_append_and_control_events",
+      "initial": {},
+      "events": [
+        {
+          "op": "start",
+          "seq": 1,
+          "model": {"version": "1.0", "biz": "chat", "meta": {}, "blocks": []}
+        },
+        {
+          "op": "set",
+          "seq": 2,
+          "block": {"id": "answer", "type": "text", "content": "Hello"}
+        },
+        {
+          "op": "ping",
+          "seq": 2,
+          "ts": 1770000000000
+        },
+        {
+          "op": "append",
+          "seq": 3,
+          "mask": "block.content",
+          "block": {"id": "answer", "type": "text", "content": " world"}
+        },
+        {"op": "end", "seq": 4}
+      ],
+      "expected": {
+        "version": "1.0",
+        "biz": "chat",
+        "meta": {},
+        "blocks": [{"id": "answer", "type": "text", "content": "Hello world"}]
+      }
+    },
+    {
+      "name": "append_creates_a_missing_block_and_extends_a_list",
+      "initial": {"version": "1.0", "biz": "research", "meta": {}, "blocks": []},
+      "events": [
+        {
+          "op": "append",
+          "seq": 1,
+          "mask": "block.items",
+          "block": {"id": "sources", "type": "reference", "items": [{"id": "a"}]}
+        },
+        {
+          "op": "append",
+          "seq": 2,
+          "mask": "block.items",
+          "block": {"id": "sources", "type": "reference", "items": [{"id": "b"}]}
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "biz": "research",
+        "meta": {},
+        "blocks": [
+          {"id": "sources", "type": "reference", "items": [{"id": "a"}, {"id": "b"}]}
+        ]
+      }
+    },
+    {
+      "name": "nested_set_and_null_are_supported",
+      "initial": {
+        "version": "1.0",
+        "biz": "chat",
+        "meta": {"status": "running"},
+        "blocks": [
+          {"id": "tool-1", "type": "tool", "tool": {"status": "running", "result": {"value": 1}}}
+        ]
+      },
+      "events": [
+        {
+          "op": "set",
+          "seq": 1,
+          "mask": "block.tool.status",
+          "block": {"id": "tool-1", "tool": {"status": "completed"}}
+        },
+        {
+          "op": "set",
+          "seq": 2,
+          "mask": "block.tool.result",
+          "block": {"id": "tool-1", "tool": {"result": null}}
+        },
+        {
+          "op": "set",
+          "seq": 3,
+          "mask": "meta.status",
+          "meta": {"status": "completed"}
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "biz": "chat",
+        "meta": {"status": "completed"},
+        "blocks": [
+          {"id": "tool-1", "type": "tool", "tool": {"status": "completed", "result": null}}
+        ]
+      }
+    },
+    {
+      "name": "error_sets_meta_error",
+      "initial": {"version": "1.0", "biz": "chat", "meta": {}, "blocks": []},
+      "events": [
+        {
+          "op": "error",
+          "seq": 1,
+          "mask": "meta.error",
+          "meta": {"error": {"code": "failed", "message": "Request failed"}}
+        }
+      ],
+      "expected": {
+        "version": "1.0",
+        "biz": "chat",
+        "meta": {"error": {"code": "failed", "message": "Request failed"}},
+        "blocks": []
+      }
+    }
+  ]
+}

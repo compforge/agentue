@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentue.dev/schema/v1/patch-event.schema.json",
+  "title": "AgentUE patch event",
+  "type": "object",
+  "required": ["op", "seq"],
+  "properties": {
+    "op": {
+      "enum": ["start", "set", "append", "error", "ping", "end"]
+    },
+    "seq": {"type": "integer", "minimum": 0},
+    "ts": {"type": "integer", "minimum": 0},
+    "mask": {"type": "string"},
+    "event_type": {"type": "string"},
+    "model": {"type": "object"},
+    "meta": {"type": "object"},
+    "block": {"type": "object"}
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"op": {"const": "start"}}, "required": ["op"]},
+      "then": {
+        "required": ["model"],
+        "not": {"anyOf": [{"required": ["meta"]}, {"required": ["block"]}]}
+      },
+      "else": {"not": {"required": ["model"]}}
+    }
+  ]
+}
+

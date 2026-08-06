@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentue.dev/schema/v1/model.schema.json",
+  "title": "AgentUE semantic model",
+  "type": "object",
+  "required": ["version", "biz", "meta", "blocks"],
+  "properties": {
+    "version": {"const": "1.0"},
+    "biz": {"type": "string", "minLength": 1},
+    "meta": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/error"}
+          ]
+        },
+        "task_id": {"type": ["string", "null"]},
+        "trace_id": {"type": ["string", "null"]},
+        "stats": {"type": ["object", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "blocks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/block"}
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {"type": "string"},
+        "message": {"type": "string"},
+        "detail": {"type": ["string", "null"]},
+        "trace_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "block": {
+      "type": "object",
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "parent_id": {"type": ["string", "null"]},
+        "group_id": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    }
+  }
+}
+
