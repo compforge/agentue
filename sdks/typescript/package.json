@@ -10,7 +10,7 @@
     "directory": "sdks/typescript"
   },
   "exports": {
-    ".": "./src/index.ts"
+    "./ui": "./src/ui/index.ts"
   },
   "scripts": {
     "test": "bun test",

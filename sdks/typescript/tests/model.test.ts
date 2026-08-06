@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseUIModel } from "../src/index.ts";
+import { parseUIModel } from "@compforge/agentue/ui";
 
 describe("semantic model validation", () => {
   test("preserves domain extensions", () => {

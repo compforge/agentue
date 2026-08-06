@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { PatchEmitter, PROTOCOL_VERSION, serializePatchEvent, type UIModel } from "../src/index.ts";
+import { PatchEmitter, PROTOCOL_VERSION, serializePatchEvent, type UIModel } from "@compforge/agentue/ui";
 
 const model = (): UIModel => ({
   version: PROTOCOL_VERSION,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { applyPatches, parseUIModel, type PatchInput, type Snapshot } from "../src/index.ts";
+import { applyPatches, parseUIModel, type PatchInput, type Snapshot } from "@compforge/agentue/ui";
 
 interface ConformanceCase {
   name: string;
