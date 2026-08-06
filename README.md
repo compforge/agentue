@@ -39,6 +39,12 @@ For TypeScript applications, install the dependency-free UI protocol SDK:
 bun add @compforge/agentue
 ```
 
+The repository root is also installable as a Git dependency. Pin a commit so builds remain reproducible:
+
+```bash
+bun add github:compforge/agentue#<commit>
+```
+
 Import the UI capability from `@compforge/agentue/ui`.
 
 The bare `agentue` package is a dependency-free namespace. `agentue[ui]` does not install Redis or Runner dependencies.
