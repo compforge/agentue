@@ -173,6 +173,41 @@ async def test_prepare_failure_is_reported_to_complete_before_error_and_end():
 
 
 @pytest.mark.asyncio
+async def test_stream_cancellation_is_reported_as_failure():
+    redis = FakeRedis()
+    completion: RunnerCompletion[None] | None = None
+
+    async def phase(context: RunnerContext[None]) -> None:
+        return None
+
+    async def stream(context: RunnerContext[None]) -> AsyncIterator[str]:
+        raise asyncio.CancelledError
+        if False:
+            yield ""
+
+    async def complete(result: RunnerCompletion[None]) -> None:
+        nonlocal completion
+        completion = result
+
+    runner_options = options()
+    runner = Runner(
+        redis,
+        RunnerCallbacks(pre_start=phase, prepare=phase, stream=stream, complete=complete),
+        options=runner_options,
+    )
+    events = [event async for event in runner.run(task_id="cancelled-task", data=None, model=model())]
+    status = await RedisEventBridge(redis, runner_options).status("cancelled-task")
+    await runner.aclose()
+
+    assert completion is not None
+    assert completion.source is CompletionSource.CANCELLED
+    assert isinstance(completion.error, asyncio.CancelledError)
+    assert [json.loads(event.data)["op"] for event in events] == ["start", "error", "end"]
+    assert json.loads(events[1].data)["meta"]["error"]["code"] == "cancelled"
+    assert status == "failed"
+
+
+@pytest.mark.asyncio
 async def test_pre_start_failure_still_runs_complete_and_valid_control_sequence():
     phases: list[str] = []
 
