@@ -10,3 +10,4 @@ Each case contains:
 
 Invalid input and model-validation behavior remain covered by SDK-specific tests until a shared error-fixture format is defined.
 
+The Python, TypeScript, and Go SDKs all run these fixtures from their native test suites.

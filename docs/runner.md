@@ -1,5 +1,12 @@
 # Runner
 
+## Language coverage
+
+The Python SDK implements the complete callback lifecycle and heartbeat
+recovery described below. The Go SDK currently provides the Redis EventBridge
+and resumable delivery primitives; its host application remains the execution
+owner and supplies any recovery policy.
+
 ## Lifecycle
 
 Runner separates the request-facing live coroutine from background execution:

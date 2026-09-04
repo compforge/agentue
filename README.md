@@ -47,6 +47,15 @@ bun add github:compforge/agentue#<commit>
 
 Import the UI capability from `@compforge/agentue/ui`.
 
+Go applications can use the UI reducer and Redis event bridge directly:
+
+```bash
+go get github.com/compforge/agentue/sdks/go
+```
+
+The Go module exposes `ui` for protocol events and deterministic reduction, and
+`runner` for the Redis bridge and resumable delivery.
+
 The bare `agentue` package is a dependency-free namespace. `agentue[ui]` does not install Redis or Runner dependencies.
 
 ## UI event quick start
@@ -74,12 +83,13 @@ schema/            Language-neutral JSON Schemas
 conformance/       Shared fixtures for SDK implementations
 sdks/python/       agentue.ui and agentue.runner
 sdks/typescript/   TypeScript UI event protocol SDK
+sdks/go/           Go UI protocol and Redis Runner building blocks
 docs/              Runtime design and operating contracts
 ```
 
 Additional language capabilities can be added under `sdks/` as the kit grows.
 
-See [the UI event specification](spec/protocol.md), [the SSE binding](spec/sse.md), [the Runner design](docs/runner.md), [the Python SDK](sdks/python/README.md), and [the TypeScript SDK](sdks/typescript/README.md).
+See [the UI event specification](spec/protocol.md), [the SSE binding](spec/sse.md), [the Runner design](docs/runner.md), [the Python SDK](sdks/python/README.md), [the TypeScript SDK](sdks/typescript/README.md), and [the Go SDK](sdks/go/README.md).
 
 ## License
 
