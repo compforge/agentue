@@ -1,14 +1,24 @@
 import { hasOwn, isRecord, type JsonRecord } from "./json.ts";
 
-export const PROTOCOL_VERSION = "1.0" as const;
+export const PROTOCOL_VERSION = "1.1" as const;
 
 export interface BaseBlock {
   id: string;
   type: string;
+  ref?: never;
   parent_id?: string | null;
   group_id?: string | null;
   [key: string]: unknown;
 }
+
+/** An opaque reference interpreted and loaded by the application selected by biz. */
+export type ReferenceBlock = {
+  id: string;
+  ref: string;
+  type?: never;
+};
+
+export type Block = BaseBlock | ReferenceBlock;
 
 export interface ErrorInfo {
   code: string;
@@ -30,20 +40,30 @@ export interface UIModel<
   Block extends BaseBlock = BaseBlock,
   Meta extends ModelMeta = ModelMeta,
 > {
-  version: typeof PROTOCOL_VERSION;
+  version: "1.0" | typeof PROTOCOL_VERSION;
   biz: string;
   meta: Meta;
-  blocks: Block[];
+  blocks: (Block | ReferenceBlock)[];
   [key: string]: unknown;
 }
 
 export function parseUIModel(input: unknown): UIModel {
   if (!isRecord(input)) throw new TypeError("model must be an object");
-  if (input.version !== PROTOCOL_VERSION) throw new TypeError(`model version must be ${PROTOCOL_VERSION}`);
+  if (input.version !== "1.0" && input.version !== PROTOCOL_VERSION) {
+    throw new TypeError("model version must be 1.0 or 1.1");
+  }
   if (typeof input.biz !== "string" || !input.biz) throw new TypeError("model biz must be a non-empty string");
   validateMeta(input.meta);
   if (!Array.isArray(input.blocks)) throw new TypeError("model blocks must be an array");
-  for (const block of input.blocks) validateBlock(block);
+  const ids = new Set<string>();
+  for (const block of input.blocks) {
+    validateBlock(block);
+    if (hasOwn(block, "ref") && input.version !== PROTOCOL_VERSION) {
+      throw new TypeError("reference blocks require model version 1.1");
+    }
+    if (ids.has(block.id)) throw new TypeError(`duplicate block id: ${JSON.stringify(block.id)}`);
+    ids.add(block.id);
+  }
   return input as UIModel;
 }
 
@@ -66,9 +86,16 @@ function validateError(input: unknown): void {
   assertNullableString(input, "trace_id");
 }
 
-function validateBlock(input: unknown): void {
+export function validateBlock(input: unknown): asserts input is Block {
   if (!isRecord(input)) throw new TypeError("model block must be an object");
   if (typeof input.id !== "string" || !input.id) throw new TypeError("model block requires a non-empty id");
+  if (hasOwn(input, "ref")) {
+    if (typeof input.ref !== "string" || !input.ref) throw new TypeError("reference block requires a non-empty ref");
+    if (Object.keys(input).some((key) => key !== "id" && key !== "ref")) {
+      throw new TypeError("reference block only accepts id and ref");
+    }
+    return;
+  }
   if (typeof input.type !== "string" || !input.type) throw new TypeError("model block requires a non-empty type");
   assertNullableString(input, "parent_id");
   assertNullableString(input, "group_id");

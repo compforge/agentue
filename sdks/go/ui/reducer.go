@@ -51,9 +51,11 @@ func MarshalSnapshot(snapshot map[string]any) (json.RawMessage, error) {
 
 func upsertBlock(snapshot, block map[string]any) error {
 	id, _ := block["id"].(string)
-	typeName, _ := block["type"].(string)
-	if id == "" || typeName == "" {
-		return errors.New("set block requires non-empty id and type")
+	if err := ValidateBlock(block); err != nil {
+		return err
+	}
+	if _, exists := block["ref"]; exists && snapshot["version"] != ProtocolVersion {
+		return errors.New("reference blocks require model version 1.1")
 	}
 	blocks, err := blocksOf(snapshot)
 	if err != nil {
@@ -95,6 +97,9 @@ func appendByMask(snapshot map[string]any, mask string, block map[string]any) er
 	for _, current := range blocks {
 		if current["id"] != id {
 			continue
+		}
+		if err := requireInlineBlock(current); err != nil {
+			return err
 		}
 		switch added := value.(type) {
 		case string:
@@ -149,6 +154,9 @@ func setByMask(snapshot map[string]any, mask string, source map[string]any) erro
 		}
 		if target == nil {
 			return fmt.Errorf("target block does not exist: %q", id)
+		}
+		if err := requireInlineBlock(target); err != nil {
+			return err
 		}
 	default:
 		return fmt.Errorf("unsupported set mask root %q", root)

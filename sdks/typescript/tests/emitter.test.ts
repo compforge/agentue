@@ -22,7 +22,7 @@ describe("PatchEmitter", () => {
 
     expect(start.seq).toBe(1);
     expect(start.model.meta.session_id).toBe("session-1");
-    expect(start.model.blocks[0]?.stage).toBe("starting");
+    expect(start.model.blocks[0]).toMatchObject({ stage: "starting" });
     expect(ping.seq).toBe(1);
     expect(append.seq).toBe(2);
     expect(append.event_type).toBe("message.delta");
@@ -41,7 +41,7 @@ describe("PatchEmitter", () => {
       { id: "tool", type: "tool", result: null },
       { mask: "block.result" },
     );
-    expect(event.block.result).toBeNull();
+    expect(event.block).toMatchObject({ result: null });
   });
 
   test("error has no implicit tracing dependency", () => {

@@ -8,7 +8,7 @@ import type {
   StartEvent,
 } from "./event.ts";
 import { cloneJson, type JsonRecord } from "./json.ts";
-import type { BaseBlock, ModelMeta, UIModel } from "./model.ts";
+import type { BaseBlock, Block, ModelMeta, UIModel } from "./model.ts";
 
 export interface EventOptions {
   eventType?: string;
@@ -50,7 +50,7 @@ export class PatchEmitter {
     return { op: "start", seq: nextSeq, model: cloneJson(model) };
   }
 
-  blockSet(block: BaseBlock, options: BlockSetOptions = {}): SetBlockEvent {
+  blockSet(block: Block, options: BlockSetOptions = {}): SetBlockEvent {
     const seq = this.nextOffset();
     const event: SetBlockEvent = options.mask === undefined
       ? { op: "set", seq, block: cloneJson(block) }

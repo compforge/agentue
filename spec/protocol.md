@@ -1,4 +1,4 @@
-# AgentUE Protocol 1.0
+# AgentUE Protocol 1.1
 
 ## 1. Scope
 
@@ -30,7 +30,7 @@ A complete model has this shape:
 
 ```json
 {
-  "version": "1.0",
+  "version": "1.1",
   "biz": "chat",
   "meta": {
     "task_id": "task-123",
@@ -74,7 +74,7 @@ Applications MAY add metadata fields. A generic consumer MUST preserve fields it
 
 ### 3.3 Blocks
 
-Every block MUST contain:
+An inline block MUST contain:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
@@ -83,7 +83,32 @@ Every block MUST contain:
 
 A block MAY contain `parent_id` to express nesting or ownership. Blocks that belong to the same execution or visual group MAY contain `group_id`. These dimensions are independent: `parent_id` is hierarchical, while `group_id` associates peer blocks.
 
-All other block fields are domain-defined. Renderers choose a component from `biz` and block `type`; the protocol does not ship executable UI code.
+All other inline block fields except the reserved `ref` field are domain-defined. Renderers choose a component from `biz` and the resolved block's `type`; the protocol does not ship executable UI code.
+
+### 3.4 Reference blocks
+
+A model MAY mix inline blocks and reference blocks in the same ordered `blocks` array:
+
+```json
+[
+  {"id": "b1", "type": "text", "content": "Inline content"},
+  {"id": "b2", "ref": "opaque-reference"}
+]
+```
+
+A reference block MUST contain exactly `id` and `ref`, both non-empty strings. It MUST NOT contain `type`, `content`, `parent_id`, `group_id`, or other inline fields. A block MUST NOT combine a reference and an inline body. Block IDs MUST be unique across both forms; array position, not the reference key, determines order. Multiple blocks MAY use the same reference key; the application resolves each using its model context and block ID.
+
+`ref` is an opaque key. The application selected by `biz` owns its interpretation, association, storage, access, and lifetime. AgentUE MUST NOT interpret it as a URL, prescribe a database layout, or load it from the reducer. When to externalize blocks, including count and byte thresholds, is application policy.
+
+Resolution MUST produce one complete inline block with the same `id`. Applications MUST reject mismatched IDs and results containing another `ref`. Resolved `type`, hierarchy, grouping, and body come from that inline block; there is no overlay or field-merging rule. Renderers needing those fields MUST resolve the reference first. A failed resolution MUST NOT be treated as an empty body.
+
+A pure reducer preserves references on `start` and whole-block `set`. Before applying a field-level `set` or `append` to a reference block, the application MUST materialize its current inline body. The reducer MUST reject field patches targeting unresolved references without modifying the snapshot. Metadata and updates to other blocks do not require resolution. Loading content is not an additional patch event and does not advance `seq`.
+
+Applications MUST make resolved content consistent with the snapshot and subsequent patch sequence. An opaque reference alone does not guarantee a historical snapshot: applications that replay old snapshots must retain the referenced content for those snapshots or materialize it before replay. Async consumers must coordinate loading with incoming patches to avoid duplicate appends or lost updates.
+
+### 3.5 Model versions
+
+New models SHOULD use `version: "1.1"`; reference blocks require 1.1. SDK readers also accept existing `version: "1.0"` models containing inline blocks, preserving their version and using the same reducer. SDK emitters default to 1.1 when constructing new models. A producer MUST NOT send references to a consumer that only understands inline blocks; the application can materialize them into a 1.0 model for that consumer. Version support does not supply a reference resolver.
 
 ## 4. Patch event
 
@@ -146,7 +171,7 @@ Every delivery stream MUST begin with `start` and MUST end with `end`. If a term
   "op": "start",
   "seq": 1,
   "model": {
-    "version": "1.0",
+    "version": "1.1",
     "biz": "chat",
     "meta": {},
     "blocks": []
@@ -156,7 +181,7 @@ Every delivery stream MUST begin with `start` and MUST end with `end`. If a term
 
 ### 5.2 `set`
 
-Without `mask`, `set` MUST carry a complete `block`. The reducer replaces the block with the same `id`, or appends it if no matching block exists.
+Without `mask`, `set` MUST carry a complete inline block or reference block. The reducer replaces the block with the same `id`, or appends it if no matching block exists. Replacement MAY switch between inline and reference forms or change a reference key; an existing block keeps its array position.
 
 ```json
 {
@@ -198,7 +223,7 @@ With `mask`, the first path segment selects the payload slot and target:
 }
 ```
 
-`set` MAY assign JSON `null`; null is a value, not an instruction to ignore the patch.
+`set` MAY assign JSON `null`; null is a value, not an instruction to ignore the patch. Field patches MUST NOT change `block.id` or set `block.ref` (including nested paths). Reference creation, replacement, and materialization use whole-block replacement; an unresolved reference cannot receive a field patch.
 
 ### 5.3 `append`
 
@@ -206,7 +231,8 @@ With `mask`, the first path segment selects the payload slot and target:
 
 - Strings are concatenated.
 - Arrays are concatenated in event order.
-- If the block does not exist, the reducer inserts the supplied block payload. In this case the payload MUST be a complete valid block.
+- If the block does not exist, the reducer inserts the supplied block payload. In this case the payload MUST be a complete valid inline block.
+- `append` MUST NOT target `block.id` or `block.ref`, or carry a reference block payload. An existing reference MUST be materialized before appending.
 
 ```json
 {
@@ -251,7 +277,7 @@ Deduplication, ranking, numbering, and other domain rules MUST be completed befo
 
 ## 6. Replay and snapshots
 
-The reducer is deterministic and independent of storage:
+The reducer is deterministic and independent of storage. For models containing references, the application must also satisfy the resolution consistency rules in section 3.4:
 
 ```text
 snapshot(n) = reduce(start.model, patches[1..n])

@@ -1,5 +1,5 @@
 import { hasOwn, isRecord, type JsonRecord } from "./json.ts";
-import { parseUIModel, type BaseBlock, type ModelMeta, type UIModel } from "./model.ts";
+import { parseUIModel, validateBlock, type Block, type ModelMeta, type UIModel } from "./model.ts";
 
 export const PatchOp = {
   START: "start",
@@ -31,7 +31,7 @@ export interface BlockPatch extends JsonRecord {
 export interface SetBlockReplaceEvent extends EventBase {
   op: "set";
   mask?: never;
-  block: BaseBlock;
+  block: Block;
 }
 
 export interface SetBlockFieldEvent extends EventBase {
@@ -173,7 +173,8 @@ function validateSet(value: JsonRecord): void {
   if (hasBlock) {
     const block = value.block as JsonRecord;
     assertBlockId(block);
-    if (!hasOwn(value, "mask")) assertBlockType(block, "set block requires a non-empty type");
+    if (!hasOwn(value, "mask")) validateBlock(block);
+    else validateBlockFieldPatch(value.mask as string, block);
   }
 }
 
@@ -184,6 +185,7 @@ function validateAppend(value: JsonRecord): void {
     throw new TypeError("append mask must match 'block.<field>'");
   }
   assertBlockId(value.block as JsonRecord);
+  validateBlockFieldPatch(value.mask as string, value.block as JsonRecord);
 }
 
 function validateError(value: JsonRecord): void {
@@ -201,8 +203,12 @@ function assertBlockId(block: JsonRecord): void {
   if (typeof block.id !== "string" || !block.id) throw new TypeError("block requires a non-empty id");
 }
 
-function assertBlockType(block: JsonRecord, message: string): void {
-  if (typeof block.type !== "string" || !block.type) throw new TypeError(message);
+function validateBlockFieldPatch(mask: string, block: JsonRecord): void {
+  if (hasOwn(block, "ref")) throw new TypeError("reference blocks require whole-block set");
+  const field = mask.split(".")[1];
+  if (field === "ref" || field === "id") {
+    throw new TypeError("block id and ref cannot be patched; use whole-block set for references");
+  }
 }
 
 function assertOptionalRecord(value: JsonRecord, key: string): void {

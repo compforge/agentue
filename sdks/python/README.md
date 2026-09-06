@@ -52,3 +52,25 @@ async for event in runner.run(task_id=task_id, data=request, model=model):
 Runner yields JSON without transport framing. For SSE, pass `event.data` and `event.cursor` to `agentue.ui.encode_sse`.
 
 See [the Runner design](https://github.com/compforge/agentue/blob/main/docs/runner.md) for lifecycle and recovery requirements.
+
+## Reference blocks
+
+Protocol 1.1 accepts a mixed ordered list of inline `{id, type, ...}` blocks and
+reference `{id, ref}` blocks. Existing 1.0 inline snapshots remain readable.
+`ref` is an opaque key interpreted by the application selected by `biz`; reference
+blocks carry no `type` or body. Whole-block `set` creates or replaces either form.
+The application must load and check the referenced block's ID before field-level
+`set` or `append`; the pure reducer rejects unresolved targets without loading.
+See the [protocol](../../spec/protocol.md#34-reference-blocks) for the full contract.
+
+```python
+from agentue.ui import ModelMeta, ReferenceBlock, UIModel
+
+model = UIModel(
+    biz="chat",
+    meta=ModelMeta(),
+    blocks=[
+        ReferenceBlock(id="b2", ref="opaque-reference"),
+    ],
+)
+```

@@ -3,54 +3,176 @@
   "$id": "https://agentue.dev/schema/v1/model.schema.json",
   "title": "AgentUE semantic model",
   "type": "object",
-  "required": ["version", "biz", "meta", "blocks"],
+  "required": [
+    "version",
+    "biz",
+    "meta",
+    "blocks"
+  ],
   "properties": {
-    "version": {"const": "1.0"},
-    "biz": {"type": "string", "minLength": 1},
+    "version": {
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
+    },
+    "biz": {
+      "type": "string",
+      "minLength": 1
+    },
     "meta": {
       "type": "object",
       "properties": {
         "error": {
           "oneOf": [
-            {"type": "null"},
-            {"$ref": "#/$defs/error"}
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/error"
+            }
           ]
         },
-        "task_id": {"type": ["string", "null"]},
-        "trace_id": {"type": ["string", "null"]},
-        "stats": {"type": ["object", "null"]}
+        "task_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trace_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stats": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
       },
       "additionalProperties": true
     },
     "blocks": {
       "type": "array",
-      "items": {"$ref": "#/$defs/block"}
+      "items": {
+        "$ref": "#/$defs/block"
+      }
     }
   },
   "additionalProperties": true,
   "$defs": {
     "error": {
       "type": "object",
-      "required": ["code", "message"],
+      "required": [
+        "code",
+        "message"
+      ],
       "properties": {
-        "code": {"type": "string"},
-        "message": {"type": "string"},
-        "detail": {"type": ["string", "null"]},
-        "trace_id": {"type": ["string", "null"]}
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trace_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       },
       "additionalProperties": true
     },
-    "block": {
+    "inline_block": {
       "type": "object",
-      "required": ["id", "type"],
+      "required": [
+        "id",
+        "type"
+      ],
       "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "type": {"type": "string", "minLength": 1},
-        "parent_id": {"type": ["string", "null"]},
-        "group_id": {"type": ["string", "null"]}
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "parent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "group_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       },
-      "additionalProperties": true
+      "additionalProperties": true,
+      "not": {
+        "required": [
+          "ref"
+        ]
+      }
+    },
+    "reference_block": {
+      "type": "object",
+      "required": [
+        "id",
+        "ref"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "block": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/inline_block"
+        },
+        {
+          "$ref": "#/$defs/reference_block"
+        }
+      ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "version": {
+            "const": "1.0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blocks": {
+            "items": {
+              "$ref": "#/$defs/inline_block"
+            }
+          }
+        }
+      }
+    }
+  ]
 }
-
