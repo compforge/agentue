@@ -75,6 +75,15 @@ events = [
 snapshot = apply_patches({}, events)
 ```
 
+## Referenced blocks
+
+Protocol 1.1 allows `blocks` to mix inline `{id, type, ...}` values and opaque
+`{id, ref}` references. The application selected by `biz` loads the complete block;
+AgentUE does not choose storage or perform I/O. Materialize a reference before a
+field patch or rendering its body. Existing 1.0 inline snapshots remain readable.
+See [reference blocks](spec/protocol.md#34-reference-blocks) for identity, update,
+and replay requirements.
+
 ## Repository layout
 
 ```text

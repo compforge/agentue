@@ -2,12 +2,17 @@
 
 Files in `cases/` are language-neutral reducer fixtures. Every SDK SHOULD run the same cases.
 
-Each case contains:
+`state-transitions.json` contains successful transitions. Each case contains:
 
 - `initial`: the model state before applying events
 - `events`: ordered AgentUE patch objects
 - `expected`: the exact state after reduction
 
-Invalid input and model-validation behavior remain covered by SDK-specific tests until a shared error-fixture format is defined.
+`block-references.json` contains shared `invalid_models` and `rejected_updates`.
+Invalid models must fail model/start validation (and the model JSON Schema).
+Each rejected update contains `initial` and `event`; every reducer must reject it
+without changing `initial`. Cases cover malformed references, unresolved field
+patches, and reference/identity mutation. Original 1.0 transition cases remain as
+compatibility coverage alongside the new 1.1 mixed-block cases.
 
 The Python, TypeScript, and Go SDKs all run these fixtures from their native test suites.

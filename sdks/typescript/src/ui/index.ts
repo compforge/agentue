@@ -29,6 +29,8 @@ export {
   parseUIModel,
   PROTOCOL_VERSION,
   type BaseBlock,
+  type Block,
+  type ReferenceBlock,
   type ErrorInfo,
   type ModelMeta,
   type UIModel,

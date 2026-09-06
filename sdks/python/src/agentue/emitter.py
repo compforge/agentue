@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from agentue.event import PatchEvent, PatchOp
-from agentue.model import BaseBlock, UIModel
+from agentue.model import BaseBlock, ReferenceBlock, UIModel
 
 
 class PatchEmitter:
@@ -44,7 +44,9 @@ class PatchEmitter:
         )
         return event.to_json()
 
-    def block_set(self, block: BaseBlock, mask: str | None = None, *, event_type: str | None = None) -> str:
+    def block_set(
+        self, block: BaseBlock | ReferenceBlock, mask: str | None = None, *, event_type: str | None = None
+    ) -> str:
         """Create or replace a block, or set one of its fields."""
         payload = block.model_dump(
             mode="json",

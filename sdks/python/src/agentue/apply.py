@@ -5,6 +5,7 @@ from collections.abc import Iterable, Mapping
 from typing import Any, TypeAlias
 
 from agentue.event import PatchEvent, PatchOp
+from agentue.model import PROTOCOL_VERSION, validate_block
 
 PatchInput: TypeAlias = str | Mapping[str, Any] | PatchEvent
 _MISSING = object()
@@ -75,6 +76,7 @@ def _apply_append(snapshot: dict[str, Any], event: PatchEvent) -> dict[str, Any]
     for existing in blocks:
         if existing.get("id") != block_id:
             continue
+        _require_inline_block(existing)
         old_value = existing.get(field)
         if old_value is None:
             existing[field] = copy.deepcopy(new_value)
@@ -88,6 +90,7 @@ def _apply_append(snapshot: dict[str, Any], event: PatchEvent) -> dict[str, Any]
 
     if not isinstance(block_data.get("type"), str) or not block_data["type"]:
         raise ValueError("append for a missing block requires a complete block with type")
+    validate_block(block_data)
     blocks.append(copy.deepcopy(block_data))
     return snapshot
 
@@ -96,8 +99,9 @@ def _upsert_block(snapshot: dict[str, Any], block_data: dict[str, Any]) -> None:
     block_id = block_data.get("id")
     if not isinstance(block_id, str) or not block_id:
         raise ValueError("set block requires a non-empty id")
-    if not isinstance(block_data.get("type"), str) or not block_data["type"]:
-        raise ValueError("set block requires a non-empty type")
+    validate_block(block_data)
+    if "ref" in block_data and snapshot.get("version") != PROTOCOL_VERSION:
+        raise ValueError("reference blocks require model version 1.1")
 
     blocks = snapshot.setdefault("blocks", [])
     for index, existing in enumerate(blocks):
@@ -123,11 +127,18 @@ def _set_by_mask(snapshot: dict[str, Any], mask: str, source: dict[str, Any]) ->
         target = next((block for block in snapshot.get("blocks", []) if block.get("id") == block_id), None)
         if target is None:
             raise ValueError(f"target block does not exist: {block_id!r}")
+        _require_inline_block(target)
     else:
         raise ValueError(f"unsupported set mask root: {root!r}")
 
     _write_path(target, path, value)
     return snapshot
+
+
+def _require_inline_block(block: dict[str, Any]) -> None:
+    # spec: A pure reducer cannot append to unknown external content.
+    if "ref" in block:
+        raise ValueError(f"unresolved reference block {block.get('id')!r}; materialize before field patches")
 
 
 def _read_path(source: dict[str, Any], path: list[str]) -> Any:

@@ -33,3 +33,24 @@ const snapshot = applyPatches({}, events);
 
 Domain-specific model and block fields remain application-owned. The `ui` subpath is independent from other AgentUE
 capabilities and does not include an agent runtime, UI components, or the AgentUE Runner.
+
+## Reference blocks
+
+Protocol 1.1 accepts a mixed ordered list of inline `{id, type, ...}` blocks and
+reference `{id, ref}` blocks. Existing 1.0 inline snapshots remain readable.
+`ref` is an opaque key interpreted by the application selected by `biz`; reference
+blocks carry no `type` or body. Whole-block `set` creates or replaces either form.
+The application must load and check the referenced block's ID before field-level
+`set` or `append`; the pure reducer rejects unresolved targets without loading.
+See the [protocol](../../spec/protocol.md#34-reference-blocks) for the full contract.
+
+```ts
+import { PROTOCOL_VERSION, type UIModel } from "@compforge/agentue/ui";
+
+const model: UIModel = {
+  version: PROTOCOL_VERSION,
+  biz: "chat",
+  meta: {},
+  blocks: [{ id: "b2", ref: "opaque-reference" }],
+};
+```

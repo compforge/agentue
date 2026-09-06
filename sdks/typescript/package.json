@@ -1,6 +1,6 @@
 {
   "name": "@compforge/agentue",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "TypeScript UI protocol SDK for AgentUE",
   "type": "module",
   "license": "MIT",

@@ -1,6 +1,8 @@
 import { parsePatchEvent, PatchOp, type PatchInput, type PatchEvent } from "./event.ts";
 import { cloneJson, hasOwn, isRecord, type JsonRecord } from "./json.ts";
 
+import { PROTOCOL_VERSION, validateBlock } from "./model.ts";
+
 export type Snapshot = JsonRecord;
 
 export function applyPatch(snapshot: Snapshot, patch: PatchInput): Snapshot {
@@ -50,6 +52,7 @@ function applyAppend(snapshot: Snapshot, event: Extract<PatchEvent, { op: "appen
   const blocks = ensureBlocks(snapshot);
   const existing = blocks.find((block) => block.id === event.block.id);
   if (existing) {
+    requireInlineBlock(existing);
     const currentValue = existing[field];
     if (currentValue === undefined || currentValue === null) {
       existing[field] = cloneJson(nextValue);
@@ -64,13 +67,16 @@ function applyAppend(snapshot: Snapshot, event: Extract<PatchEvent, { op: "appen
   }
 
   if (!event.block.type) throw new Error("append for a missing block requires a complete block with type");
+  validateBlock(event.block);
   blocks.push(cloneJson(event.block));
   return snapshot;
 }
 
 function upsertBlock(snapshot: Snapshot, block: JsonRecord): void {
-  if (typeof block.id !== "string" || !block.id) throw new Error("set block requires a non-empty id");
-  if (typeof block.type !== "string" || !block.type) throw new Error("set block requires a non-empty type");
+  validateBlock(block);
+  if (hasOwn(block, "ref") && snapshot.version !== PROTOCOL_VERSION) {
+    throw new Error("reference blocks require model version 1.1");
+  }
 
   const blocks = ensureBlocks(snapshot);
   const index = blocks.findIndex((current) => current.id === block.id);
@@ -96,6 +102,7 @@ function setByMask(snapshot: Snapshot, mask: string, source: JsonRecord): Snapsh
     const blockId = source.id;
     const block = ensureBlocks(snapshot).find((candidate) => candidate.id === blockId);
     if (!block) throw new Error(`target block does not exist: ${JSON.stringify(blockId)}`);
+    requireInlineBlock(block);
     target = block;
   } else {
     throw new Error(`unsupported set mask root: ${JSON.stringify(root)}`);
@@ -103,6 +110,13 @@ function setByMask(snapshot: Snapshot, mask: string, source: JsonRecord): Snapsh
 
   writePath(target, path, value.value);
   return snapshot;
+}
+
+// spec: A pure reducer cannot append to unknown external content.
+function requireInlineBlock(block: JsonRecord): void {
+  if (hasOwn(block, "ref")) {
+    throw new Error(`unresolved reference block ${JSON.stringify(block.id)}; materialize before field patches`);
+  }
 }
 
 function readPath(source: JsonRecord, path: string[]): { found: boolean; value?: unknown } {

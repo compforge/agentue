@@ -30,3 +30,18 @@ err := replayer.Stream(ctx, taskID, lastEventID, func(event runner.Delivery) err
 Applications retain ownership of task creation, authorization, durable business
 state, and HTTP routing. AgentUE owns the event protocol, Redis delivery state,
 and reconstruction of a full `start` model when a client resumes.
+
+## Reference blocks
+
+Protocol 1.1 accepts a mixed ordered list of inline `{id, type, ...}` blocks and
+reference `{id, ref}` blocks. Existing 1.0 inline snapshots remain readable.
+`ref` is an opaque key interpreted by the application selected by `biz`; reference
+blocks carry no `type` or body. Whole-block `set` creates or replaces either form.
+The application must load and check the referenced block's ID before field-level
+`set` or `append`; the pure reducer rejects unresolved targets without loading.
+See the [protocol](../../spec/protocol.md#34-reference-blocks) for the full contract.
+
+Use `ui.ProtocolVersion` for new models. `ui.ValidateBlock` accepts either block
+form; `ui.ValidateModel` checks model versions and unique block IDs. These checks
+also run when parsing or applying a `start` event; whole-block `set` validates its
+block representation. Blocks remain JSON maps, as in the existing Go API.

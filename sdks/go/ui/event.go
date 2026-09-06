@@ -80,6 +80,7 @@ func (event Event) Validate() error {
 		if event.Model == nil || event.Meta != nil || event.Block != nil || event.Mask != "" {
 			return errors.New("start event requires only model")
 		}
+		return ValidateModel(event.Model)
 	case OpSet:
 		if (event.Meta == nil) == (event.Block == nil) {
 			return errors.New("set event requires exactly one of meta or block")
@@ -96,10 +97,17 @@ func (event Event) Validate() error {
 				return fmt.Errorf("set mask must start with %q", expected)
 			}
 		}
+		if event.Mask == "" {
+			return ValidateBlock(event.Block)
+		}
+		if event.Block != nil {
+			return validateBlockFieldPatch(event.Mask, event.Block)
+		}
 	case OpAppend:
 		if event.Block == nil || event.Meta != nil || !strings.HasPrefix(event.Mask, "block.") || event.Mask == "block." {
 			return errors.New("append event requires block and a block field mask")
 		}
+		return validateBlockFieldPatch(event.Mask, event.Block)
 	case OpError:
 		errorValue, ok := event.Meta["error"].(map[string]any)
 		if event.Mask != "meta.error" || !ok || errorValue == nil || event.Block != nil {
