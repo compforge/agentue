@@ -3,6 +3,7 @@ import type {
   EndEvent,
   ErrorEvent,
   PingEvent,
+  PatchEvent,
   SetBlockEvent,
   SetMetaEvent,
   StartEvent,
@@ -27,10 +28,11 @@ export interface ErrorOptions {
   detail?: string;
 }
 
+/** One ordered timeline, optionally tagged with a logical stream identifier. */
 export class PatchEmitter {
   private currentOffset: number;
 
-  constructor(startOffset = 0) {
+  constructor(startOffset = 0, private readonly streamId?: string) {
     if (!Number.isInteger(startOffset) || startOffset < 0) {
       throw new Error("startOffset must be a non-negative integer");
     }
@@ -47,7 +49,7 @@ export class PatchEmitter {
       throw new Error("start seq cannot move the emitter backwards");
     }
     this.currentOffset = nextSeq;
-    return { op: "start", seq: nextSeq, model: cloneJson(model) };
+    return this.address({ op: "start", seq: nextSeq, model: cloneJson(model) });
   }
 
   blockSet(block: Block, options: BlockSetOptions = {}): SetBlockEvent {
@@ -56,7 +58,7 @@ export class PatchEmitter {
       ? { op: "set", seq, block: cloneJson(block) }
       : { op: "set", seq, mask: options.mask, block: cloneJson(block) };
     if (options.eventType !== undefined) event.event_type = options.eventType;
-    return event;
+    return this.address(event);
   }
 
   metaSet(
@@ -71,7 +73,7 @@ export class PatchEmitter {
       meta: cloneJson(meta),
     };
     if (options.eventType !== undefined) event.event_type = options.eventType;
-    return event;
+    return this.address(event);
   }
 
   blockAppend(block: BaseBlock, options: BlockAppendOptions = {}): AppendEvent {
@@ -82,19 +84,19 @@ export class PatchEmitter {
       block: cloneJson(block),
     };
     if (options.eventType !== undefined) event.event_type = options.eventType;
-    return event;
+    return this.address(event);
   }
 
   error(code: string, message: string, options: ErrorOptions = {}): ErrorEvent {
     const error: JsonRecord = { code, message };
     if (options.detail !== undefined && options.detail !== message) error.detail = options.detail;
     if (options.traceId !== undefined) error.trace_id = options.traceId;
-    return {
+    return this.address({
       op: "error",
       seq: this.nextOffset(),
       mask: "meta.error",
       meta: { error },
-    };
+    });
   }
 
   setStats(stats: JsonRecord): SetMetaEvent {
@@ -102,11 +104,16 @@ export class PatchEmitter {
   }
 
   ping(): PingEvent {
-    return { op: "ping", seq: this.currentOffset, ts: Date.now() };
+    return this.address({ op: "ping", seq: this.currentOffset, ts: Date.now() });
   }
 
   end(): EndEvent {
-    return { op: "end", seq: this.nextOffset() };
+    return this.address({ op: "end", seq: this.nextOffset() });
+  }
+
+  private address<T extends PatchEvent>(event: T): T {
+    if (this.streamId !== undefined) event.stream_id = this.streamId;
+    return event;
   }
 
   private nextOffset(): number {

@@ -16,6 +16,7 @@ def apply_patch(snapshot: dict[str, Any], patch: PatchInput) -> dict[str, Any]:
 
     Incremental operations mutate and return ``snapshot``. ``start`` returns a
     new state because its model replaces the previous state completely.
+    Multiplexing callers route by ``stream_id`` first; this reducer handles one model.
     """
     event = _coerce_event(patch)
 

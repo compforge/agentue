@@ -21,6 +21,9 @@ const (
 )
 
 type Event struct {
+	// StreamID optionally addresses a logical stream, independently of the
+	// transport connection and its replay cursor. Empty leaves routing to the caller.
+	StreamID  string         `json:"stream_id,omitempty"`
 	Op        Op             `json:"op"`
 	Seq       uint64         `json:"seq"`
 	Timestamp *int64         `json:"ts,omitempty"`

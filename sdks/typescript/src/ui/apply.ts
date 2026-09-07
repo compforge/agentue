@@ -5,6 +5,7 @@ import { PROTOCOL_VERSION, validateBlock } from "./model.ts";
 
 export type Snapshot = JsonRecord;
 
+/** Apply to one model; multiplexing callers route by stream_id before calling. */
 export function applyPatch(snapshot: Snapshot, patch: PatchInput): Snapshot {
   const event = parsePatchEvent(patch);
 

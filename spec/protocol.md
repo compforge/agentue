@@ -132,6 +132,7 @@ Every event uses the following envelope:
 | --- | --- | --- | --- |
 | `op` | string | REQUIRED | Operation defined in section 5. |
 | `seq` | non-negative integer | REQUIRED | Position in the model's ordered event timeline. |
+| `stream_id` | string | OPTIONAL | Opaque logical stream address for multiplexed delivery; not a transport cursor. |
 | `ts` | integer | OPTIONAL | Unix time in milliseconds. |
 | `mask` | string | OP-SPECIFIC | Field path affected by the operation. |
 | `event_type` | string | OPTIONAL | Domain hint for observers or renderers; it does not change reducer semantics. |
@@ -147,6 +148,31 @@ Persisted, non-heartbeat events in one model timeline MUST have increasing `seq`
 
 A reconstructed `start` sent during resume represents all state through its `seq`. The next state-changing event MUST have a greater value. Transport cursors, such as an SSE `id`, are separate from `seq`.
 
+### 4.2 Optional logical stream addressing
+
+`stream_id` provides the feel of HTTP/2 multiplexing: independent logical streams
+can share one transport while their events interleave. This is application-level
+addressing, not an HTTP/2 stream identifier, flow-control window, or RPC lifecycle.
+
+- Applications MAY omit `stream_id`. A single model or an externally routed
+  delivery needs no additional identifier; SDKs MUST NOT require one.
+- When using this field to multiplex, producers MUST keep the same identifier on
+  events belonging to one logical stream. Omitted or empty identifiers select the
+  unnamed stream; they are not wildcards over named streams.
+- Consumers MUST route by `stream_id` before applying events. Each stream owns
+  its model, `seq`, and block IDs; equal values across different streams do not
+  collide. Single-model reducers do not perform routing themselves.
+- `start` replaces only the addressed model. `error` and `end` concern only
+  that stream's delivery, not other streams or the shared transport.
+- Identifiers are opaque strings supplied by the application. They MAY remain
+  stable across reconnections; a resumed `start` carries that stream's snapshot
+  and covered `seq`. No global sequence or cross-stream ordering is implied.
+
+For example, a chat application can use its Message ID as `stream_id`, sending a
+complete model on `start` and only addressed patches thereafter. Actor identity,
+permissions, subscription selection, retention, and business completion remain
+application concerns. Multiplexing does not isolate shared transport backpressure.
+
 ## 5. Operations
 
 AgentUE divides operations by responsibility:
@@ -160,7 +186,7 @@ AgentUE divides operations by responsibility:
 | `ping` | control | no | Keeps a live delivery active. |
 | `end` | control | no | Ends a delivery normally or after an error. |
 
-Every delivery stream MUST begin with `start` and MUST end with `end`. If a terminal failure occurs, `error` MUST appear before `end`.
+Every logical stream delivery MUST begin with `start` and MUST end with `end`. If a terminal failure occurs, `error` MUST appear before `end` on that logical stream. These rules apply independently when a transport multiplexes several streams.
 
 ### 5.1 `start`
 
@@ -273,7 +299,7 @@ Deduplication, ranking, numbering, and other domain rules MUST be completed befo
 
 ### 5.6 `end`
 
-`end` does not change the model. It is always the final protocol event in a delivery stream.
+`end` does not change the model. It is the final protocol event in that logical stream's current delivery, not a command to close a shared connection. A resumed delivery begins with another `start`.
 
 ## 6. Replay and snapshots
 
@@ -298,6 +324,8 @@ The client handles first delivery and resumed delivery identically: `start` alwa
 
 - New `biz` values and block types MAY be introduced without changing the core version.
 - New metadata and block fields MAY be introduced compatibly; consumers MUST preserve unknown fields.
+- Envelope fields are validated by SDKs. Producers using `stream_id` must ensure
+  consumers support it; omitting it preserves the unaddressed event format.
 - A new operation changes reducer semantics and therefore requires a protocol revision.
 - Existing operation semantics MUST NOT be redefined within the same protocol version.
 - Incompatible changes to the complete model require a new `version` value.
@@ -308,4 +336,3 @@ The client handles first delivery and resumed delivery identically: `start` alwa
 - Block payloads can contain tool output or traces. Producers SHOULD redact secrets before emitting or persisting events.
 - Transports and intermediaries impose message-size limits. Producers SHOULD split large string and array fields across multiple `append` events.
 - Consumers SHOULD impose application-appropriate limits on event size, block count, and accumulated content.
-

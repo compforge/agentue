@@ -17,3 +17,9 @@ def test_set_requires_exactly_one_payload_slot():
 def test_control_event_rejects_state_payload():
     with pytest.raises(ValidationError, match="does not accept state payloads"):
         PatchEvent(op="ping", seq=1, meta={"status": "ignored"})
+
+
+@pytest.mark.parametrize("stream_id", [7, False, [], {}])
+def test_stream_id_must_be_a_string(stream_id):
+    with pytest.raises(ValidationError):
+        PatchEvent(op="ping", seq=0, stream_id=stream_id)

@@ -16,3 +16,8 @@ patches, and reference/identity mutation. Original 1.0 transition cases remain a
 compatibility coverage alongside the new 1.1 mixed-block cases.
 
 The Python, TypeScript, and Go SDKs all run these fixtures from their native test suites.
+
+`stream-addressing.json` interleaves named and unnamed streams. Tests route each
+event to a separate single-model reducer, round-trip the optional identifier,
+and compare the final model per stream. Equal sequence/block IDs, a stream ending
+while another continues, and resuming one stream must not affect other streams.

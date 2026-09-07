@@ -9,6 +9,7 @@
       "enum": ["start", "set", "append", "error", "ping", "end"]
     },
     "seq": {"type": "integer", "minimum": 0},
+    "stream_id": {"type": "string"},
     "ts": {"type": "integer", "minimum": 0},
     "mask": {"type": "string"},
     "event_type": {"type": "string"},
@@ -28,4 +29,3 @@
     }
   ]
 }
-

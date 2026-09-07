@@ -10,6 +10,24 @@ const model = (): UIModel => ({
 });
 
 describe("PatchEmitter", () => {
+  test("optionally addresses every operation", () => {
+    for (const streamId of [undefined, "message-123"]) {
+      const emitter = new PatchEmitter(0, streamId);
+      const block = { id: "answer", type: "text", content: "hello" };
+      const events = [
+        emitter.start(model()), emitter.blockSet(block),
+        emitter.metaSet("meta.status", { status: "working" }), emitter.blockAppend(block),
+        emitter.setStats({ tokens: 1 }), emitter.error("failed", "Request failed"),
+        emitter.ping(), emitter.end(),
+      ];
+      for (const event of events) {
+        if (streamId === undefined) expect(event).not.toHaveProperty("stream_id");
+        else expect(event.stream_id).toBe(streamId);
+        expect(() => serializePatchEvent(event)).not.toThrow();
+      }
+    }
+  });
+
   test("preserves domain fields and orders events", () => {
     const emitter = new PatchEmitter();
     const start = emitter.start(model());

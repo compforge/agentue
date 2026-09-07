@@ -9,12 +9,13 @@ from agentue.model import BaseBlock, ReferenceBlock, UIModel
 
 
 class PatchEmitter:
-    """Stateful event builder that manages ``seq`` values."""
+    """Manage one timeline's ``seq`, optionally tagging its logical stream."""
 
-    def __init__(self, start_offset: int = 0):
+    def __init__(self, start_offset: int = 0, *, stream_id: str | None = None):
         if start_offset < 0:
             raise ValueError("start_offset must be non-negative")
         self._offset = start_offset
+        self._stream_id = stream_id
 
     @property
     def offset(self) -> int:
@@ -39,6 +40,7 @@ class PatchEmitter:
 
         event = PatchEvent(
             op=PatchOp.START,
+            stream_id=self._stream_id,
             seq=seq,
             model=model.model_dump(mode="json", exclude_none=True, serialize_as_any=True),
         )
@@ -56,6 +58,7 @@ class PatchEmitter:
         )
         event = PatchEvent(
             op=PatchOp.SET,
+            stream_id=self._stream_id,
             seq=self._next_offset(),
             mask=mask,
             event_type=event_type,
@@ -67,6 +70,7 @@ class PatchEmitter:
         """Set a metadata field selected by ``mask``."""
         event = PatchEvent(
             op=PatchOp.SET,
+            stream_id=self._stream_id,
             seq=self._next_offset(),
             mask=mask,
             event_type=event_type,
@@ -84,6 +88,7 @@ class PatchEmitter:
         """Append a string or list field to a block."""
         event = PatchEvent(
             op=PatchOp.APPEND,
+            stream_id=self._stream_id,
             seq=self._next_offset(),
             mask=mask,
             event_type=event_type,
@@ -107,6 +112,7 @@ class PatchEmitter:
             error_payload["trace_id"] = trace_id
         event = PatchEvent(
             op=PatchOp.ERROR,
+            stream_id=self._stream_id,
             seq=self._next_offset(),
             mask="meta.error",
             meta={"error": error_payload},
@@ -119,11 +125,13 @@ class PatchEmitter:
 
     def ping(self) -> str:
         """Create a heartbeat without advancing ``seq``."""
-        return PatchEvent(op=PatchOp.PING, seq=self._offset, ts=int(time.time() * 1000)).to_json()
+        return PatchEvent(
+            op=PatchOp.PING, seq=self._offset, stream_id=self._stream_id, ts=int(time.time() * 1000)
+        ).to_json()
 
     def end(self) -> str:
         """Create the final event in a delivery stream."""
-        return PatchEvent(op=PatchOp.END, seq=self._next_offset()).to_json()
+        return PatchEvent(op=PatchOp.END, seq=self._next_offset(), stream_id=self._stream_id).to_json()
 
 
 # Compatibility name for applications migrating from an SSE-specific emitter.
