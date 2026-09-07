@@ -27,6 +27,7 @@ class PatchEvent(BaseModel):
 
     op: PatchOp
     seq: int = Field(..., ge=0)
+    stream_id: str | None = Field(default=None, strict=True)
     ts: int | None = Field(default=None, ge=0)
     mask: str | None = None
     event_type: str | None = None

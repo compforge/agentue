@@ -23,6 +23,11 @@ events = [
 snapshot = apply_patches({}, events)
 ```
 
+Use `PatchEmitter(stream_id="message-123")` to optionally tag one logical
+timeline. The default emitter omits the field. For multiplexed delivery, route
+events by `stream_id` before applying them to separate snapshots; the reducer
+still handles one model at a time. See [logical stream addressing](../../spec/protocol.md#42-optional-logical-stream-addressing).
+
 ## Runner
 
 ```bash

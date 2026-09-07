@@ -3,7 +3,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-from agentue.ui import apply_patches
+from agentue.ui import PatchEvent, apply_patches
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 
@@ -29,3 +29,17 @@ def test_shared_state_transition_cases():
 
         assert result == case["expected"], case["name"]
         model_validator.validate(result)
+
+
+def test_optional_stream_addressing():
+    fixture = _load_json("conformance/cases/stream-addressing.json")
+    validator = Draft202012Validator(_load_json("schema/v1/patch-event.schema.json"))
+    streams = {}
+    for raw in fixture["events"]:
+        validator.validate(raw)
+        event = PatchEvent.model_validate(raw)
+        encoded = json.loads(event.to_json())
+        assert encoded == raw
+        stream_id = event.stream_id or ""
+        streams[stream_id] = apply_patches(streams.get(stream_id, {}), [encoded])
+    assert streams == fixture["expected"]

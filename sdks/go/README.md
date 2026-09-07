@@ -31,6 +31,15 @@ Applications retain ownership of task creation, authorization, durable business
 state, and HTTP routing. AgentUE owns the event protocol, Redis delivery state,
 and reconstruction of a full `start` model when a client resumes.
 
+## Optional stream addressing
+
+Set `event.StreamID = "message-123"` to address a logical stream, or leave it empty
+for single-stream use. When multiplexing, route by StreamID before calling
+`ui.Apply`; each stream keeps its own snapshot and sequence.
+Runner/Replayer still operates on one stored timeline; a host can attach StreamID
+to its deliveries, including reconstructed snapshots, when aggregating them.
+See [logical stream addressing](../../spec/protocol.md#42-optional-logical-stream-addressing).
+
 ## Reference blocks
 
 Protocol 1.1 accepts a mixed ordered list of inline `{id, type, ...}` blocks and

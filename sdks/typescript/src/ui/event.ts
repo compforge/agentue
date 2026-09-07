@@ -14,6 +14,8 @@ export type PatchOp = (typeof PatchOp)[keyof typeof PatchOp];
 
 interface EventBase {
   seq: number;
+  /** Optional logical stream address, not the transport connection or cursor. */
+  stream_id?: string;
   ts?: number;
   event_type?: string;
 }
@@ -79,7 +81,7 @@ export type PatchEvent =
 
 export type PatchInput = string | PatchEvent | JsonRecord;
 
-const EVENT_KEYS = new Set(["op", "seq", "ts", "mask", "event_type", "model", "meta", "block"]);
+const EVENT_KEYS = new Set(["op", "seq", "stream_id", "ts", "mask", "event_type", "model", "meta", "block"]);
 const PATCH_OPS = new Set<string>(Object.values(PatchOp));
 
 export function parsePatchEvent(input: unknown): PatchEvent {
@@ -98,6 +100,7 @@ export function parsePatchEvent(input: unknown): PatchEvent {
     throw new TypeError("patch event seq must be a non-negative integer");
   }
   assertOptionalNumber(value, "ts");
+  assertOptionalString(value, "stream_id");
   assertOptionalString(value, "mask");
   assertOptionalString(value, "event_type");
   assertOptionalRecord(value, "model");

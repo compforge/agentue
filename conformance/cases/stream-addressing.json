@@ -1,0 +1,21 @@
+{
+  "events": [
+    {"stream_id":"a","op":"start","seq":1,"model":{"version":"1.1","biz":"chat","meta":{},"blocks":[]}},
+    {"stream_id":"b","op":"start","seq":1,"model":{"version":"1.1","biz":"chat","meta":{},"blocks":[]}},
+    {"op":"start","seq":1,"model":{"version":"1.1","biz":"chat","meta":{},"blocks":[]}},
+    {"stream_id":"a","op":"append","seq":2,"mask":"block.content","block":{"id":"answer","type":"text","content":"A"}},
+    {"stream_id":"b","op":"append","seq":2,"mask":"block.content","block":{"id":"answer","type":"text","content":"B"}},
+    {"op":"append","seq":2,"mask":"block.content","block":{"id":"answer","type":"text","content":"unnamed"}},
+    {"stream_id":"a","op":"end","seq":3},
+    {"stream_id":"b","op":"append","seq":3,"mask":"block.content","block":{"id":"answer","type":"text","content":"!"}},
+    {"stream_id":"a","op":"start","seq":3,"model":{"version":"1.1","biz":"chat","meta":{},"blocks":[{"id":"answer","type":"text","content":"A"}]}},
+    {"stream_id":"a","op":"end","seq":4},
+    {"stream_id":"b","op":"end","seq":4},
+    {"op":"end","seq":3}
+  ],
+  "expected": {
+    "a":{"version":"1.1","biz":"chat","meta":{},"blocks":[{"id":"answer","type":"text","content":"A"}]},
+    "b":{"version":"1.1","biz":"chat","meta":{},"blocks":[{"id":"answer","type":"text","content":"B!"}]},
+    "":{"version":"1.1","biz":"chat","meta":{},"blocks":[{"id":"answer","type":"text","content":"unnamed"}]}
+  }
+}

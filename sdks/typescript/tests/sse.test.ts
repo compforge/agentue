@@ -3,6 +3,13 @@ import { describe, expect, test } from "bun:test";
 import { decodeSse, encodeSse } from "@compforge/agentue/ui";
 
 describe("SSE binding", () => {
+  test("logical stream identity is separate from the transport cursor", () => {
+    const event = { op: "ping", seq: 3, stream_id: "message-123" } as const;
+    expect(decodeSse(encodeSse(event, { eventId: "cursor-1" }))).toEqual({
+      event, eventId: "cursor-1",
+    });
+  });
+
   test("encodes a transport cursor", () => {
     expect(encodeSse({ op: "ping", seq: 3, ts: 123 }, { eventId: "cursor-1" })).toBe(
       'id: cursor-1\ndata: {"op":"ping","seq":3,"ts":123}\n\n',

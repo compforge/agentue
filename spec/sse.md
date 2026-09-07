@@ -39,9 +39,38 @@ Clients SHOULD send the last successfully applied transport cursor when requesti
 
 ## 3. Lifecycle
 
-Every newly delivered SSE response MUST begin with an AgentUE `start` event, including resumed responses. The response MUST finish with `end`; a terminal error is sent as `error` followed by `end`.
+For single-stream delivery, every SSE response begins with `start`, including
+resumed responses, and finishes with `end`; a terminal error is sent as `error`
+followed by `end`. With multiplexing, this lifecycle applies to each logical
+stream, not to the entire SSE response.
 
 An application SHOULD emit `ping` when the connection is otherwise idle. The interval is deployment-specific and is not part of the protocol.
+
+### Optional multiplexing
+
+The optional JSON `stream_id` lets one SSE response carry interleaved logical
+streams. It does not use the SSE `id` field or require HTTP/2:
+
+```text
+data: {"stream_id":"a","op":"append","seq":2,"mask":"block.content","block":{"id":"answer","type":"text","content":"Hello"}}
+
+data: {"stream_id":"b","op":"append","seq":2,"mask":"block.content","block":{"id":"answer","type":"text","content":"World"}}
+
+data: {"stream_id":"a","op":"end","seq":3}
+
+```
+
+This excerpt follows a `start` for each stream. Ending `a` does not close the
+response or prevent more events for `b`. Hosts decide when to close the shared
+response; connection closure alone does not prove all streams completed.
+
+Applications need not use `stream_id`; unaddressed single-stream delivery remains
+valid. A stream's `ping` carries its identifier; transport-only heartbeats can use
+SSE comments instead. A shared SSE `id` must represent a cursor that the host can
+resume across the aggregate feed; one child's `seq` or Redis cursor cannot stand
+in for progress across all streams. Snapshot-based reconnect does not require SSE
+`id`. Stream identity and routing semantics are defined in
+[Protocol §4.2](protocol.md#42-optional-logical-stream-addressing).
 
 ## 4. Boundaries
 
@@ -55,4 +84,3 @@ The SSE binding is responsible only for framing JSON events. It does not define:
 - renderer behavior
 
 These concerns belong to the host application.
-

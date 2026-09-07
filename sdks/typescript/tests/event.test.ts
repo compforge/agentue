@@ -33,4 +33,10 @@ describe("patch event validation", () => {
     expect(extractPatchOp('{"op":"set","seq":1}')).toBe("set");
     expect(extractPatchOp("not-json")).toBeUndefined();
   });
+
+  test("stream_id must be a string when supplied", () => {
+    for (const stream_id of [7, false, [], {}]) {
+      expect(() => parsePatchEvent({ op: "ping", seq: 0, stream_id })).toThrow("stream_id");
+    }
+  });
 });

@@ -75,6 +75,12 @@ events = [
 snapshot = apply_patches({}, events)
 ```
 
+For multiplexed delivery, optionally give each logical stream a `stream_id`
+(for example, `PatchEmitter(stream_id="message-123")`). Several streams can share
+one SSE response, each with its own sequence and lifecycle—similar in shape to
+HTTP/2 multiplexing, but at the application layer. Omit the field for ordinary
+single-stream use. See [logical stream addressing](spec/protocol.md#42-optional-logical-stream-addressing).
+
 ## Referenced blocks
 
 Protocol 1.1 allows `blocks` to mix inline `{id, type, ...}` values and opaque

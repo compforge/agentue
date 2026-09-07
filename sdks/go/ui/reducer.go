@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// Apply updates one model. A multiplexing caller routes by StreamID before
+// calling Apply; this reducer neither selects streams nor owns their lifecycle.
 func Apply(snapshot map[string]any, event Event) (map[string]any, error) {
 	if err := event.Validate(); err != nil {
 		return nil, err

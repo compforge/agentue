@@ -34,6 +34,14 @@ const snapshot = applyPatches({}, events);
 Domain-specific model and block fields remain application-owned. The `ui` subpath is independent from other AgentUE
 capabilities and does not include an agent runtime, UI components, or the AgentUE Runner.
 
+## Optional stream addressing
+
+Use `new PatchEmitter(0, "message-123")` to tag every emitted event with a
+`stream_id`, or continue using `new PatchEmitter()` to omit it. SSE encoding and
+decoding preserve this field independently of the transport cursor. Route events
+by stream_id before calling the single-model reducer; an end event does not close
+other streams. See [logical stream addressing](../../spec/protocol.md#42-optional-logical-stream-addressing).
+
 ## Reference blocks
 
 Protocol 1.1 accepts a mixed ordered list of inline `{id, type, ...}` blocks and

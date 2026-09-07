@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from agentue.ui import BaseBlock, ModelMeta, PatchEmitter, UIModel, extract_patch_op
 
 
@@ -68,3 +70,26 @@ def test_error_has_no_implicit_tracing_dependency():
 def test_extract_patch_op_is_tolerant():
     assert extract_patch_op('{"op":"set","seq":1}') == "set"
     assert extract_patch_op("not-json") is None
+
+
+@pytest.mark.parametrize("stream_id", [None, "message-123"])
+def test_emitter_optionally_addresses_every_operation(stream_id):
+    emitter = PatchEmitter(stream_id=stream_id)
+    model = UIModel(biz="chat", meta=ModelMeta())
+    block = BaseBlock(id="answer", type="text", content="hello")
+    events = [
+        emitter.start(model),
+        emitter.block_set(block),
+        emitter.meta_set("meta.status", {"status": "working"}),
+        emitter.block_append(block),
+        emitter.set_stats({"tokens": 1}),
+        emitter.error("failed", "Request failed"),
+        emitter.ping(),
+        emitter.end(),
+    ]
+    for raw in events:
+        event = json.loads(raw)
+        if stream_id is None:
+            assert "stream_id" not in event
+        else:
+            assert event["stream_id"] == stream_id
