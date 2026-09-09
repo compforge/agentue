@@ -48,6 +48,8 @@ type EventBridge interface {
 }
 
 type BridgeOptions struct {
+	// KeyPrefix namespaces task keys. Empty defaults to "agentue:runner".
+	// Redis keys are KeyPrefix + ":" + taskID + ":state" or ":events".
 	KeyPrefix string
 	TaskTTL   time.Duration
 	ReadBlock time.Duration
