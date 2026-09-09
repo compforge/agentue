@@ -1,9 +1,11 @@
 # AgentUE Go SDK
 
-The Go SDK contains two small packages:
+The Go SDK contains small, independently usable packages:
 
 - `ui` implements AgentUE events, validation, and deterministic reduction.
 - `runner` provides a Redis Streams event bridge and resumable delivery.
+- `storage` provides `Frame` / `Unframe` helpers for bounded physical storage of
+  large logical blocks. See [storage framing](../../docs/storage.md).
 
 The Go `runner` package currently exposes transport and reconstruction building
 blocks. The Python SDK additionally provides the four-callback execution owner,

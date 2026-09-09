@@ -85,6 +85,31 @@ A block MAY contain `parent_id` to express nesting or ownership. Blocks that bel
 
 All other inline block fields except the reserved `ref` field are domain-defined. Renderers choose a component from `biz` and the resolved block's `type`; the protocol does not ship executable UI code.
 
+#### Built-in technical type: `frame`
+
+`frame` is the built-in technical block type for an optional framing capability,
+not a directly renderable content type. In an event it appears as
+`event.block.type = "frame"`; it does not introduce a new event operation.
+
+```json
+{"id":"frame-unique-id","type":"frame","block_id":"result","seq":0,"total":3,"data":"..."}
+```
+
+`id` identifies the frame itself; `block_id` identifies the original inline block
+within its owning model. `seq` is the zero-based fragment index, independent of
+the event's sequence number; `total` is the group's fragment count. `data` is a
+string containing a piece of the original complete block's serialized JSON.
+Reassembly checks consistent block identity and total, unique frame IDs, and
+exact coverage of indices `0..total-1`, then parses the joined data and checks the
+restored block ID. Frames are not nested and cannot encode unresolved references.
+
+Generic block validation and reducers preserve the open block fields; they do not
+automatically reassemble frames. A host using frames resolves them before rendering
+or applying logical updates to the original block. The optional Go storage helpers
+implement framing and reassembly without database or network I/O. They do not
+automatically fragment SSE events, alter event ordering, or provide replay semantics.
+See [storage framing](../docs/storage.md) for byte budgets and persistence boundaries.
+
 ### 3.4 Reference blocks
 
 A model MAY mix inline blocks and reference blocks in the same ordered `blocks` array:
