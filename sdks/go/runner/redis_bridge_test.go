@@ -12,6 +12,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+func TestRedisEventBridgeKeyFormats(t *testing.T) {
+	bridge := NewRedisEventBridge(nil, BridgeOptions{KeyPrefix: "example:agentue"})
+	const id = "message/01991af4-d832-7000-8000-000000000001"
+	if got := bridge.stateKey(id); got != "example:agentue:"+id+":state" {
+		t.Fatalf("state key = %q", got)
+	}
+	if got := bridge.streamKey(id); got != "example:agentue:"+id+":events" {
+		t.Fatalf("events key = %q", got)
+	}
+}
+
 func TestRedisEventBridgeAcrossInstances(t *testing.T) {
 	server := miniredis.RunT(t)
 	clientA := redis.NewClient(&redis.Options{Addr: server.Addr()})
