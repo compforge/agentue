@@ -12,14 +12,53 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func TestRedisEventBridgeKeyFormats(t *testing.T) {
-	bridge := NewRedisEventBridge(nil, BridgeOptions{KeyPrefix: "example:agentue"})
-	const id = "message/01991af4-d832-7000-8000-000000000001"
-	if got := bridge.stateKey(id); got != "example:agentue:"+id+":state" {
-		t.Fatalf("state key = %q", got)
+func TestRedisEventBridgeKeySuffixes(t *testing.T) {
+	for _, tc := range []struct{ prefix, id, base string }{
+		{"", "opaque-id", "agentue:runner:opaque-id"},
+		{"", "tenant:{conversation}/output%1", "agentue:runner:tenant:{conversation}/output%1"},
+		{"example:agentue", "message/123", "example:agentue:message/123"},
+	} {
+		bridge := NewRedisEventBridge(nil, BridgeOptions{KeyPrefix: tc.prefix})
+		if got := bridge.stateKey(tc.id); got != tc.base+":state" {
+			t.Fatalf("state key for %q = %q", tc.id, got)
+		}
+		if got := bridge.streamKey(tc.id); got != tc.base+":events" {
+			t.Fatalf("events key for %q = %q", tc.id, got)
+		}
 	}
-	if got := bridge.streamKey(id); got != "example:agentue:"+id+":events" {
-		t.Fatalf("events key = %q", got)
+}
+
+func TestRedisEventBridgeDefaultPrefix(t *testing.T) {
+	server := miniredis.RunT(t)
+	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	producer := NewRedisEventBridge(client, BridgeOptions{})
+	consumer := NewRedisEventBridge(client, BridgeOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	const taskID = "message/123"
+	const baseKey = "agentue:runner:message/123"
+	start := mustEvent(t, ui.Event{
+		Op: ui.OpStart, Seq: 1,
+		Model: map[string]any{"version": "1.0", "biz": "chat", "meta": map[string]any{}, "blocks": []any{}},
+	})
+	if err := producer.Initialize(ctx, taskID, json.RawMessage(`{"version":"1.0"}`), start, 1); err != nil {
+		t.Fatal(err)
+	}
+	if !server.Exists(baseKey+":state") || !server.Exists(baseKey+":events") || len(server.Keys()) != 2 {
+		t.Fatalf("Redis keys = %v", server.Keys())
+	}
+	if state, err := consumer.State(ctx, taskID); err != nil || state.LastSeq != 1 {
+		t.Fatalf("State = %#v, %v", state, err)
+	}
+	if events, err := consumer.Read(ctx, taskID, "0-0"); err != nil || len(events) != 1 {
+		t.Fatalf("Read = %#v, %v", events, err)
+	}
+	if err := producer.Delete(ctx, taskID); err != nil {
+		t.Fatal(err)
+	}
+	if keys := server.Keys(); len(keys) != 0 {
+		t.Fatalf("keys after Delete = %v", keys)
 	}
 }
 

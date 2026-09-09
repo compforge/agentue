@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	// RedisStateKeyFormat and RedisEventsKeyFormat describe RedisEventBridge's
-	// storage layout, not an AgentUE protocol requirement. Arguments are the
-	// configured prefix and the host's opaque stream identity, in that order.
-	RedisStateKeyFormat  = "%s:%s:state"
-	RedisEventsKeyFormat = "%s:%s:events"
+	// RedisStateKeySuffix and RedisEventsKeySuffix identify this bridge's storage
+	// purposes, not AgentUE protocol requirements. The host's stream identity is
+	// opaque; the bridge does not prescribe its business fields or structure.
+	RedisStateKeySuffix  = ":state"
+	RedisEventsKeySuffix = ":events"
 
 	defaultKeyPrefix = "agentue:runner"
 	defaultTaskTTL   = 24 * time.Hour
@@ -231,11 +231,15 @@ func (bridge *RedisEventBridge) MarkTerminal(ctx context.Context, taskID string,
 }
 
 func (bridge *RedisEventBridge) stateKey(taskID string) string {
-	return fmt.Sprintf(RedisStateKeyFormat, bridge.options.KeyPrefix, taskID)
+	return bridge.redisKey(taskID, RedisStateKeySuffix)
 }
 
 func (bridge *RedisEventBridge) streamKey(taskID string) string {
-	return fmt.Sprintf(RedisEventsKeyFormat, bridge.options.KeyPrefix, taskID)
+	return bridge.redisKey(taskID, RedisEventsKeySuffix)
+}
+
+func (bridge *RedisEventBridge) redisKey(taskID, suffix string) string {
+	return bridge.options.KeyPrefix + ":" + taskID + suffix
 }
 
 func (bridge *RedisEventBridge) ttlSeconds() int64 {

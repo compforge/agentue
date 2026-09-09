@@ -33,6 +33,13 @@ Applications retain ownership of task creation, authorization, durable business
 state, and HTTP routing. AgentUE owns the event protocol, Redis delivery state,
 and reconstruction of a full `start` model when a client resumes.
 
+`KeyPrefix` defaults to `agentue:runner`; a caller-supplied prefix replaces that
+default. Redis keys are `<KeyPrefix>:<taskID>:state` and
+`<KeyPrefix>:<taskID>:events`. The task ID is opaque and can carry a host-defined
+identity such as `message/123`. Producers and consumers must use the same prefix
+and task ID. The `:state` and `:events` suffixes describe this Redis implementation,
+not an AgentUE protocol requirement.
+
 ## Optional stream addressing
 
 Set `event.StreamID = "message-123"` to address a logical stream, or leave it empty
