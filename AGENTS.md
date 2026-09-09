@@ -16,8 +16,8 @@ agentue/
 ├── conformance/              # 各 SDK 共用的协议测试用例
 ├── sdks/python/              # Python UI 协议与 Runner
 ├── sdks/typescript/           # TypeScript UI 协议、reducer 和 SSE 编解码
-├── sdks/go/                   # Go UI 协议与 Redis 交付组件
-├── docs/                     # Runner 设计与运行约定
+├── sdks/go/                   # Go UI 协议、Redis 交付组件与可选 storage 分片工具
+├── docs/                     # Runner 与 storage 设计及使用边界
 ├── scripts/                  # 版本同步与只读检查
 └── Makefile                  # 格式化、lint 和各语言测试入口
 ```
@@ -43,4 +43,5 @@ agentue/
 - `spec/sse.md` — SSE 帧、传输游标和多路交付
 - `conformance/README.md` — 跨语言契约测试
 - `docs/runner.md` — Runner 执行与交付生命周期
+- `docs/storage.md` — Frame/Unframe 纯工具、字节预算与宿主存储责任
 - `sdks/python/README.md`、`sdks/typescript/README.md`、`sdks/go/README.md` — SDK 使用入口
